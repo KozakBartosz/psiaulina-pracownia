@@ -1,0 +1,48 @@
+import {test,expect} from '@playwright/test';
+test('formatowanie zaznaczenia, bloków, linków i PDF z emoji',async({page})=>{
+ const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.goto('/');await page.getByRole('button',{name:/Przykładowe podsumowanie/}).click();
+ const editor=page.locator('.cm-content');
+ await editor.fill('Ważne');await editor.press('ControlOrMeta+a');
+ await page.getByRole('button',{name:'Pogrubienie',exact:true}).click();
+ await expect(page.locator('.pdf-source strong')).toHaveText('Ważne');
+ await page.getByRole('button',{name:'Pogrubienie',exact:true}).click();
+ await expect(page.locator('.pdf-source strong')).toHaveCount(0);
+ await editor.fill('Plan pracy');await page.getByRole('button',{name:'Nagłówek 2',exact:true}).click();
+ await expect(page.locator('.pdf-source h2')).toHaveText('Plan pracy');
+ await page.getByRole('button',{name:'Nagłówek 3',exact:true}).click();
+ await expect(page.locator('.pdf-source h3')).toHaveText('Plan pracy');
+ await page.getByRole('button',{name:'Akapit',exact:true}).click();
+ await expect(page.locator('.pdf-source h2')).toHaveCount(0);
+ await editor.fill('Spacery\nOdpoczynek');await editor.press('ControlOrMeta+a');
+ await page.getByRole('button',{name:'Lista punktowana',exact:true}).click();
+ await expect(page.locator('.pdf-source ul li')).toHaveCount(2);
+ await editor.press('ControlOrMeta+a');await page.getByRole('button',{name:'Lista numerowana',exact:true}).click();
+ await expect(page.locator('.pdf-source ol li')).toHaveCount(2);
+ await editor.fill('Psiaulina');await editor.press('ControlOrMeta+a');await page.getByRole('button',{name:'Wstaw link',exact:true}).click();
+ await page.getByLabel('Adres strony',{exact:true}).fill('https://www.psiaulina.pl/');await page.getByRole('button',{name:'Wstaw',exact:true}).click();
+ await expect(page.locator('.pdf-source a')).toHaveAttribute('href','https://www.psiaulina.pl/');
+ await editor.fill('Hej Michał! 😊 🐶 ❤️ 👍🏽 👨‍👩‍👧‍👦\n\n## Plan pracy\n\n- Spokojny spacer 😊\n- Odpoczynek 🐾');
+ await editor.press('ControlOrMeta+End');
+ await page.getByRole('button',{name:'Wstaw emoji',exact:true}).click();
+ await page.mouse.click(5,5);
+ await expect(page.getByRole('dialog',{name:'Wstaw emoji'})).toBeHidden();
+ await page.getByRole('button',{name:'Wstaw emoji',exact:true}).click();
+ await expect(page.locator('.emoji-grid button').first()).toHaveText('😀');
+ await page.getByLabel('Kategoria emoji').selectOption({label:'Zwierzęta i natura'});
+ await page.getByRole('button',{name:'dog face',exact:true}).click();
+ await expect(page.locator('.pdf-source li').last()).toHaveText('Odpoczynek 🐾🐶');
+ await expect(page.locator('.pdf-pages')).toHaveAttribute('aria-busy','false');
+ await expect(page.locator('.pdf-page canvas').first()).toHaveAttribute('data-rendered','true',{timeout:30000});
+ // Yellow pixels belong to the smileys; the monochrome font has none.
+ const colourPixels=await page.locator('.pdf-page canvas').first().evaluate((element)=>{
+  const canvas=element as HTMLCanvasElement;
+  const pixels=canvas.getContext('2d')!.getImageData(0,0,canvas.width,canvas.height).data;
+  let yellow=0;for(let i=0;i<pixels.length;i+=4)if(pixels[i]>190&&pixels[i+1]>120&&pixels[i+2]<90)yellow++;
+  return yellow;
+ });
+ expect(colourPixels).toBeGreaterThan(10);
+ const download=page.waitForEvent('download');await page.getByRole('button',{name:'Drukuj / PDF'}).click();await (await download).saveAs('test-results/emoji.pdf');
+ await page.screenshot({path:'test-results/formatting.png'});
+ expect(errors).toEqual([]);
+});

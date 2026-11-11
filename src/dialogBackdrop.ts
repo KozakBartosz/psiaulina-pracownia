@@ -1,0 +1,7 @@
+import type {MouseEvent} from 'react';
+
+export function isBackdropClick(event:MouseEvent<HTMLDialogElement>){
+ if(event.target!==event.currentTarget)return false;
+ const {left,right,top,bottom}=event.currentTarget.getBoundingClientRect();
+ return event.clientX<left||event.clientX>right||event.clientY<top||event.clientY>bottom;
+}

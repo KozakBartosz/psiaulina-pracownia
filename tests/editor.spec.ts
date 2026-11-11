@@ -1,0 +1,28 @@
+import {test,expect} from '@playwright/test';
+test('tworzenie, zmiana nazwy, ochrona zmian i eksport PDF',async({page})=>{
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('/');
+ await page.getByRole('button',{name:/Przykładowe podsumowanie/}).click();
+ await expect(page.locator('.markdown')).toContainText('Najważniejsze obserwacje');
+ await page.getByLabel('Nazwa dokumentu').fill('Luna — konsultacja');
+ await page.getByRole('button',{name:'Zapisz',exact:true}).click();
+ await expect(page.locator('.file.selected')).toContainText('Luna — konsultacja');
+ const download=page.waitForEvent('download');
+ await page.getByRole('button',{name:'Drukuj / PDF'}).click();
+ const pdf=await download;await pdf.saveAs('test-results/podsumowanie.pdf');
+ await expect(page.locator('.status-message')).toContainText('Zapisano PDF');
+ await page.screenshot({path:'test-results/editor.png',fullPage:true});
+ await page.getByRole('button',{name:'Nowy dokument',exact:true}).click();
+ await page.getByLabel('Nazwa dokumentu').fill('Nowy dokument z polskimi znakami');
+ await page.locator('.cm-content').fill('## Ćwiczenia\n\n- Spokojne spacery i odpoczynek.');
+ page.once('dialog',dialog=>dialog.dismiss());
+ await page.getByRole('button',{name:'Wiedza',exact:true}).click();
+ await expect(page.getByLabel('Nazwa dokumentu')).toHaveValue('Nowy dokument z polskimi znakami');
+ await page.getByRole('button',{name:'Zapisz',exact:true}).click();
+ await expect(page.locator('.file.selected')).toContainText('Nowy dokument z polskimi znakami');
+ await page.getByRole('button',{name:'Wiedza',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Nowy dokument',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Zapisz',exact:true})).toHaveCount(0);
+ await expect(page.locator('.cm-content')).toHaveCount(0);
+ expect(errors).toEqual([]);
+});

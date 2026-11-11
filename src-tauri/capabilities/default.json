@@ -1,0 +1,16 @@
+{
+  "identifier": "default",
+  "description": "G\u0142\u00f3wne okno edytora",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "core:webview:allow-set-webview-zoom",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "dialog:allow-confirm",
+    "core:window:allow-close",
+    "core:window:allow-destroy"
+  ]
+}

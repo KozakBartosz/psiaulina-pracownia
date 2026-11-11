@@ -7,6 +7,15 @@ test('tworzenie, zmiana nazwy, ochrona zmian i eksport PDF',async({page})=>{
  await page.getByLabel('Nazwa dokumentu').fill('Luna — konsultacja');
  await page.getByRole('button',{name:'Zapisz',exact:true}).click();
  await expect(page.locator('.file.selected')).toContainText('Luna — konsultacja');
+ const reload=page.getByRole('button',{name:'Odśwież',exact:true});
+ await page.locator('.cm-content').fill('Niezapisana wersja');
+ page.once('dialog',dialog=>dialog.dismiss());
+ await reload.click();
+ await expect(page.locator('.cm-content')).toHaveText('Niezapisana wersja');
+ page.once('dialog',dialog=>dialog.accept());
+ await reload.click();
+ await expect(page.locator('.cm-content')).toContainText('Najważniejsze obserwacje');
+ await expect(page.getByRole('button',{name:'Zapisz',exact:true})).toBeDisabled();
  const download=page.waitForEvent('download');
  await page.getByRole('button',{name:'Drukuj / PDF'}).click();
  const pdf=await download;await pdf.saveAs('test-results/podsumowanie.pdf');

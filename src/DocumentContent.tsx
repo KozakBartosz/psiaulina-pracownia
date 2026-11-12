@@ -1,6 +1,7 @@
 import type {CSSProperties} from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize,{defaultSchema} from 'rehype-sanitize';
 // Only the two document colours are allowed in inline HTML styles.
@@ -13,5 +14,5 @@ export default function DocumentContent({text}:{text:string}){
   '--document-paragraph-gap':`${spacing.paragraphGap}pt`,
   '--document-heading-gap':`${spacing.headingGap}pt`
  } as CSSProperties;
- return <div style={style} data-document-spacing={JSON.stringify(spacing)}>{body.split(/^[ \t]*<!--[ \t]*pagebreak[ \t]*-->[ \t]*\r?$/m).map((part,index)=><div className="document-section" data-pdf-section="true" key={index}>{index>0&&<div className="manual-page-break" aria-label="Nowa strona">Nowa strona</div>}<Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw,[rehypeSanitize,colourSchema]]}>{part}</Markdown></div>)}</div>;
+ return <div style={style} data-document-spacing={JSON.stringify(spacing)}>{body.split(/^[ \t]*<!--[ \t]*pagebreak[ \t]*-->[ \t]*\r?$/m).map((part,index)=><div className="document-section" data-pdf-section="true" key={index}>{index>0&&<div className="manual-page-break" aria-label="Nowa strona">Nowa strona</div>}<Markdown remarkPlugins={[remarkGfm,remarkBreaks]} rehypePlugins={[rehypeRaw,[rehypeSanitize,colourSchema]]}>{part}</Markdown></div>)}</div>;
 }
